@@ -3,17 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 class SelectableDistanceFilterExample extends StatefulWidget {
   @override
-  State<SelectableDistanceFilterExample> createState() =>
-      _SelectableDistanceFilterExampleState();
+  State<SelectableDistanceFilterExample> createState() => _SelectableDistanceFilterExampleState();
 }
 
-class _SelectableDistanceFilterExampleState
-    extends State<SelectableDistanceFilterExample> {
+class _SelectableDistanceFilterExampleState extends State<SelectableDistanceFilterExample> {
   static const _distanceFilters = [0, 5, 10, 30, 50];
   int _selectedIndex = 0;
 
@@ -24,7 +21,6 @@ class _SelectableDistanceFilterExampleState
   void initState() {
     super.initState();
     _positionStream = StreamController();
-    _subscriptPositionStream();
   }
 
   @override
@@ -50,8 +46,7 @@ class _SelectableDistanceFilterExampleState
         children: [
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName:
-                'net.tlserver6y.flutter_map_location_marker.example',
+            userAgentPackageName: 'net.tlserver6y.flutter_map_location_marker.example',
             maxZoom: 19,
           ),
           CurrentLocationLayer(
@@ -75,11 +70,8 @@ class _SelectableDistanceFilterExampleState
                     onPressed: (index) {
                       setState(() => _selectedIndex = index);
                       _streamSubscription.cancel();
-                      _subscriptPositionStream();
                     },
-                    children: _distanceFilters
-                        .map((distance) => Text(distance.toString()))
-                        .toList(growable: false),
+                    children: _distanceFilters.map((distance) => Text(distance.toString())).toList(growable: false),
                   ),
                 ],
               ),
@@ -87,22 +79,6 @@ class _SelectableDistanceFilterExampleState
           ),
         ],
       ),
-    );
-  }
-
-  void _subscriptPositionStream() {
-    _streamSubscription = const LocationMarkerDataStreamFactory()
-        .fromGeolocatorPositionStream(
-      stream: Geolocator.getPositionStream(
-        locationSettings: LocationSettings(
-          distanceFilter: _distanceFilters[_selectedIndex],
-        ),
-      ),
-    )
-        .listen(
-      (position) {
-        _positionStream.add(position);
-      },
     );
   }
 }

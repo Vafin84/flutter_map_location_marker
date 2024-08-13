@@ -17,9 +17,6 @@ class DefaultStreamExample extends StatefulWidget {
 }
 
 class _DefaultStreamExampleState extends State<DefaultStreamExample> {
-  late final Stream<LocationMarkerPosition?> _positionStream;
-  late final Stream<LocationMarkerHeading?> _headingStream;
-
 /*
   late final Stream<Position?> _geolocatorStream;
   late final Stream<CompassEvent?> _compassStream;
@@ -28,10 +25,6 @@ class _DefaultStreamExampleState extends State<DefaultStreamExample> {
   @override
   void initState() {
     super.initState();
-    const factory = LocationMarkerDataStreamFactory();
-    _positionStream =
-        factory.fromGeolocatorPositionStream().asBroadcastStream();
-    _headingStream = factory.fromCompassHeadingStream().asBroadcastStream();
 
     // Get streams with default settings.
 /*
@@ -71,15 +64,12 @@ class _DefaultStreamExampleState extends State<DefaultStreamExample> {
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName:
-                      'net.tlserver6y.flutter_map_location_marker.example',
+                  userAgentPackageName: 'net.tlserver6y.flutter_map_location_marker.example',
                   maxZoom: 19,
                 ),
                 CurrentLocationLayer(
-                  positionStream: _positionStream,
-                  headingStream: _headingStream,
 
-                  // Use helper function in factory to cast the streams.
+                    // Use helper function in factory to cast the streams.
 /*
                   positionStream: factory.fromGeolocatorPositionStream(
                     stream: _geolocatorStream,
@@ -88,33 +78,13 @@ class _DefaultStreamExampleState extends State<DefaultStreamExample> {
                     stream: _compassStream,
                   ),
 */
-                ),
+                    ),
               ],
             ),
           ),
-          Expanded(
+          const Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                PulseAnimationBox(
-                  stream: _positionStream,
-                  child: const Text(
-                    'P',
-                    style: TextStyle(
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                PulseAnimationBox(
-                  stream: _headingStream,
-                  child: const Text(
-                    'H',
-                    style: TextStyle(
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
         ],
@@ -137,8 +107,7 @@ class PulseAnimationBox extends StatefulWidget {
   State<PulseAnimationBox> createState() => _PulseAnimationBoxState();
 }
 
-class _PulseAnimationBoxState extends State<PulseAnimationBox>
-    with SingleTickerProviderStateMixin {
+class _PulseAnimationBoxState extends State<PulseAnimationBox> with SingleTickerProviderStateMixin {
   late final AnimationController _aniController;
   late final Animation<double> _sizeAni;
   late final Animation<double> _opacityAni;

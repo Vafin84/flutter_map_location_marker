@@ -7,12 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../data/data.dart';
-import '../data/data_stream_factory.dart';
 import '../data/tween.dart';
-import '../exceptions/incorrect_setup_exception.dart';
-import '../exceptions/permission_denied_exception.dart';
-import '../exceptions/permission_requesting_exception.dart';
-import '../exceptions/service_disabled_exception.dart';
 import '../options/align_on_update.dart';
 import '../options/focal_point.dart';
 import '../options/indicators.dart';
@@ -118,43 +113,30 @@ class CurrentLocationLayer extends StatefulWidget {
     this.rotateAnimationCurve = Curves.easeInOut,
     this.indicators = const LocationMarkerIndicators(),
     @Deprecated("Use 'focalPoint' instead.") Point<double>? followScreenPoint,
-    @Deprecated("Use 'focalPoint' instead.")
-    Point<double>? followScreenPointOffset,
-    @Deprecated("Use 'alignPositionStream' instead.")
-    Stream<double?>? followCurrentLocationStream,
-    @Deprecated("Use 'alignDirectionStream' instead.")
-    Stream<void>? turnHeadingUpLocationStream,
-    @Deprecated("Use 'alignPositionOnUpdate' instead.")
-    AlignOnUpdate followOnLocationUpdate = AlignOnUpdate.never,
-    @Deprecated("Use 'alignDirectionOnUpdate' instead.")
-    AlignOnUpdate turnOnHeadingUpdate = AlignOnUpdate.never,
+    @Deprecated("Use 'focalPoint' instead.") Point<double>? followScreenPointOffset,
+    @Deprecated("Use 'alignPositionStream' instead.") Stream<double?>? followCurrentLocationStream,
+    @Deprecated("Use 'alignDirectionStream' instead.") Stream<void>? turnHeadingUpLocationStream,
+    @Deprecated("Use 'alignPositionOnUpdate' instead.") AlignOnUpdate followOnLocationUpdate = AlignOnUpdate.never,
+    @Deprecated("Use 'alignDirectionOnUpdate' instead.") AlignOnUpdate turnOnHeadingUpdate = AlignOnUpdate.never,
     @Deprecated("Use 'alignPositionAnimationDuration' instead.")
     Duration followAnimationDuration = const Duration(milliseconds: 200),
-    @Deprecated("Use 'alignPositionAnimationCurve' instead.")
-    Curve followAnimationCurve = Curves.fastOutSlowIn,
+    @Deprecated("Use 'alignPositionAnimationCurve' instead.") Curve followAnimationCurve = Curves.fastOutSlowIn,
     @Deprecated("Use 'alignDirectionAnimationDuration' instead.")
     Duration turnAnimationDuration = const Duration(milliseconds: 50),
-    @Deprecated("Use 'alignDirectionAnimationCurve' instead.")
-    Curve turnAnimationCurve = Curves.easeInOut,
+    @Deprecated("Use 'alignDirectionAnimationCurve' instead.") Curve turnAnimationCurve = Curves.easeInOut,
   })  : focalPoint = focalPoint ??
             FocalPoint(
               ratio: followScreenPoint ?? const Point<double>(0, 0),
               offset: followScreenPointOffset ?? const Point<double>(0, 0),
             ),
-        alignPositionStream =
-            alignPositionStream ?? followCurrentLocationStream,
+        alignPositionStream = alignPositionStream ?? followCurrentLocationStream,
         alignPositionOnUpdate = alignPositionOnUpdate ?? followOnLocationUpdate,
-        alignPositionAnimationDuration =
-            alignPositionAnimationDuration ?? followAnimationDuration,
-        alignPositionAnimationCurve =
-            alignPositionAnimationCurve ?? followAnimationCurve,
-        alignDirectionStream =
-            alignDirectionStream ?? turnHeadingUpLocationStream,
+        alignPositionAnimationDuration = alignPositionAnimationDuration ?? followAnimationDuration,
+        alignPositionAnimationCurve = alignPositionAnimationCurve ?? followAnimationCurve,
+        alignDirectionStream = alignDirectionStream ?? turnHeadingUpLocationStream,
         alignDirectionOnUpdate = alignDirectionOnUpdate ?? turnOnHeadingUpdate,
-        alignDirectionAnimationDuration =
-            alignDirectionAnimationDuration ?? turnAnimationDuration,
-        alignDirectionAnimationCurve =
-            alignDirectionAnimationCurve ?? turnAnimationCurve;
+        alignDirectionAnimationDuration = alignDirectionAnimationDuration ?? turnAnimationDuration,
+        alignDirectionAnimationCurve = alignDirectionAnimationCurve ?? turnAnimationCurve;
 
   @override
   State<CurrentLocationLayer> createState() => _CurrentLocationLayerState();
@@ -208,8 +190,7 @@ class CurrentLocationLayer extends StatefulWidget {
   }
 }
 
-class _CurrentLocationLayerState extends State<CurrentLocationLayer>
-    with TickerProviderStateMixin {
+class _CurrentLocationLayerState extends State<CurrentLocationLayer> with TickerProviderStateMixin {
   _Status _status = _Status.initialing;
   LocationMarkerPosition? _currentPosition;
   LocationMarkerHeading? _currentHeading;
@@ -238,7 +219,6 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer>
     super.initState();
     _isFirstLocationUpdate = true;
     _isFirstHeadingUpdate = true;
-    _subscriptPositionStream();
   }
 
   @override
@@ -246,12 +226,10 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer>
     super.didUpdateWidget(oldWidget);
     if (widget.positionStream != oldWidget.positionStream) {
       _positionStreamSubscription.cancel();
-      _subscriptPositionStream();
     }
     if (_status == _Status.ready) {
       if (widget.headingStream != oldWidget.headingStream) {
         _headingStreamSubscription?.cancel();
-        _subscriptHeadingStream();
       }
       if (widget.alignPositionStream != oldWidget.alignPositionStream) {
         _alignPositionStreamSubscription?.cancel();
@@ -374,114 +352,11 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer>
     super.dispose();
   }
 
-  void _subscriptPositionStream() {
-    final positionStream = widget.positionStream ??
-        const LocationMarkerDataStreamFactory().fromGeolocatorPositionStream();
-    _positionStreamSubscription = positionStream.listen(
-      (position) {
-        if (!mounted) {
-          return;
-        }
-        if (position == null) {
-          if (_status != _Status.initialing) {
-            setState(() {
-              _status = _Status.initialing;
-              _currentPosition = null;
-            });
-          }
-        } else {
-          if (_status != _Status.ready) {
-            _subscriptHeadingStream();
-            _subscriptAlignPositionStream();
-            _subscriptAlignDirectionStream();
-            setState(() {
-              _status = _Status.ready;
-            });
-          }
-          _moveMarker(position);
-
-          bool alignPosition;
-          switch (widget.alignPositionOnUpdate) {
-            case AlignOnUpdate.always:
-              alignPosition = true;
-            case AlignOnUpdate.once:
-              alignPosition = _isFirstLocationUpdate;
-              _isFirstLocationUpdate = false;
-            case AlignOnUpdate.never:
-              alignPosition = false;
-          }
-          if (alignPosition) {
-            _moveMap(
-              position.latLng,
-              _followingZoom,
-            );
-          }
-        }
-      },
-      onError: (error) {
-        switch (error) {
-          case IncorrectSetupException _:
-            setState(() => _status = _Status.incorrectSetup);
-          case PermissionRequestingException _:
-            setState(() => _status = _Status.permissionRequesting);
-          case PermissionDeniedException _:
-            setState(() => _status = _Status.permissionDenied);
-          case ServiceDisabledException _:
-            setState(() => _status = _Status.serviceDisabled);
-        }
-        _headingStreamSubscription?.cancel();
-      },
-    );
-  }
-
-  void _subscriptHeadingStream() {
-    final headingStream = widget.headingStream ??
-        const LocationMarkerDataStreamFactory().fromCompassHeadingStream();
-    _headingStreamSubscription = headingStream.listen(
-      (heading) {
-        if (!mounted) {
-          return;
-        }
-        if (heading == null) {
-          if (_currentHeading != null) {
-            setState(() => _currentHeading = null);
-          }
-        } else {
-          if (_status == _Status.ready) {
-            _rotateMarker(heading);
-
-            bool alignDirection;
-            switch (widget.alignDirectionOnUpdate) {
-              case AlignOnUpdate.always:
-                alignDirection = true;
-              case AlignOnUpdate.once:
-                alignDirection = _isFirstHeadingUpdate;
-                _isFirstHeadingUpdate = false;
-              case AlignOnUpdate.never:
-                alignDirection = false;
-            }
-            if (alignDirection) {
-              _rotateMap(-heading.heading % (2 * pi));
-            }
-          } else {
-            _currentHeading = heading;
-          }
-        }
-      },
-      onError: (_) {
-        if (_currentHeading != null) {
-          setState(() => _currentHeading = null);
-        }
-      },
-    );
-  }
-
   void _subscriptAlignPositionStream() {
     if (_alignPositionStreamSubscription != null) {
       return;
     }
-    _alignPositionStreamSubscription =
-        widget.alignPositionStream?.listen((zoom) {
+    _alignPositionStreamSubscription = widget.alignPositionStream?.listen((zoom) {
       if (!mounted) {
         return;
       }
@@ -499,8 +374,7 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer>
     if (_alignDirectionStreamSubscription != null) {
       return;
     }
-    _alignDirectionStreamSubscription =
-        widget.alignDirectionStream?.listen((_) {
+    _alignDirectionStreamSubscription = widget.alignDirectionStream?.listen((_) {
       if (!mounted) {
         return;
       }
@@ -530,8 +404,7 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer>
     });
 
     _moveMarkerAnimationController!.addStatusListener((status) {
-      if (status == AnimationStatus.completed ||
-          status == AnimationStatus.dismissed) {
+      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
         _moveMarkerAnimationController!.dispose();
         _moveMarkerAnimationController = null;
       }
@@ -554,8 +427,7 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer>
     } else {
       final crs = options.crs;
       final mapCenter = crs.latLngToPoint(camera.center, camera.zoom);
-      final followPoint =
-          camera.rotatePoint(mapCenter, mapCenter + projectedFocalPoint);
+      final followPoint = camera.rotatePoint(mapCenter, mapCenter + projectedFocalPoint);
       beginLatLng = crs.pointToLatLng(followPoint, camera.zoom);
     }
 
@@ -606,8 +478,7 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer>
     });
 
     _moveMapAnimationController!.addStatusListener((status) {
-      if (status == AnimationStatus.completed ||
-          status == AnimationStatus.dismissed) {
+      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
         _moveMapAnimationController!.dispose();
         _moveMapAnimationController = null;
       }
@@ -638,8 +509,7 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer>
     });
 
     _rotateMarkerAnimationController!.addStatusListener((status) {
-      if (status == AnimationStatus.completed ||
-          status == AnimationStatus.dismissed) {
+      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
         _rotateMarkerAnimationController!.dispose();
         _rotateMarkerAnimationController = null;
       }
@@ -686,8 +556,7 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer>
     });
 
     _rotateMapAnimationController!.addStatusListener((status) {
-      if (status == AnimationStatus.completed ||
-          status == AnimationStatus.dismissed) {
+      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
         _rotateMapAnimationController!.dispose();
         _rotateMapAnimationController = null;
       }

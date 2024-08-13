@@ -2,7 +2,6 @@
 library flutter_map_location_marker;
 
 export 'src/data/data.dart';
-export 'src/data/data_stream_factory.dart';
 export 'src/drawings/default_location_marker.dart';
 export 'src/drawings/heading_sector.dart';
 export 'src/exceptions/incorrect_setup_exception.dart';
