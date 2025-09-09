@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'page/center_fab_example.dart';
-import 'page/custom_stream_example.dart';
+
 import 'page/customize_marker_example.dart';
 import 'page/default_stream_example.dart';
 import 'page/geolocator_settings_example.dart';
 import 'page/indicators_example.dart';
 import 'page/minimum_example.dart';
 import 'page/navigation_example.dart';
-import 'page/no_stream_example.dart';
+
 import 'page/selectable_distance_filter_example.dart';
 
 // import 'page/animation_debugger.dart';
@@ -89,8 +89,7 @@ class Home extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (BuildContext context) =>
-                      GeolocatorSettingsExample(),
+                  builder: (BuildContext context) => GeolocatorSettingsExample(),
                 ),
               );
             },
@@ -101,34 +100,12 @@ class Home extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (BuildContext context) =>
-                      SelectableDistanceFilterExample(),
+                  builder: (BuildContext context) => SelectableDistanceFilterExample(),
                 ),
               );
             },
           ),
-          ListTile(
-            title: const Text('Custom Stream Example'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (BuildContext context) => CustomStreamExample(),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            title: const Text('No Stream Example'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (BuildContext context) => NoStreamExample(),
-                ),
-              );
-            },
-          ),
+
           ListTile(
             title: const Text('Navigation Example'),
             onTap: () {

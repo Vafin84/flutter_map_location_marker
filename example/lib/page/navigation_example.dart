@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -57,14 +56,13 @@ class _NavigationExampleState extends State<NavigationExample> {
         children: [
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName:
-                'net.tlserver6y.flutter_map_location_marker.example',
+            userAgentPackageName: 'net.tlserver6y.flutter_map_location_marker.example',
             maxZoom: 19,
           ),
           CurrentLocationLayer(
             focalPoint: const FocalPoint(
-              ratio: Point(0.0, 1.0),
-              offset: Point(0.0, -60.0),
+              ratio: Offset(0.0, 1.0),
+              offset: Offset(0.0, -60.0),
             ),
             alignPositionStream: _alignPositionStreamController.stream,
             alignDirectionStream: _alignDirectionStreamController.stream,
@@ -92,12 +90,8 @@ class _NavigationExampleState extends State<NavigationExample> {
                   setState(
                     () {
                       _navigationMode = !_navigationMode;
-                      _alignPositionOnUpdate = _navigationMode
-                          ? AlignOnUpdate.always
-                          : AlignOnUpdate.never;
-                      _alignDirectionOnUpdate = _navigationMode
-                          ? AlignOnUpdate.always
-                          : AlignOnUpdate.never;
+                      _alignPositionOnUpdate = _navigationMode ? AlignOnUpdate.always : AlignOnUpdate.never;
+                      _alignDirectionOnUpdate = _navigationMode ? AlignOnUpdate.always : AlignOnUpdate.never;
                     },
                   );
                   if (_navigationMode) {

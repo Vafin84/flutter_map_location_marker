@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -93,51 +92,26 @@ class CurrentLocationLayer extends StatefulWidget {
   final LocationMarkerIndicators indicators;
 
   /// Create a CurrentLocationLayer.
-  CurrentLocationLayer({
+  const CurrentLocationLayer({
     super.key,
     this.style = const LocationMarkerStyle(),
     this.positionStream,
     this.headingStream,
-    FocalPoint? focalPoint,
-    Stream<double?>? alignPositionStream,
-    AlignOnUpdate? alignPositionOnUpdate,
-    Stream<void>? alignDirectionStream,
-    AlignOnUpdate? alignDirectionOnUpdate,
-    Duration? alignPositionAnimationDuration,
-    Curve? alignPositionAnimationCurve,
-    Duration? alignDirectionAnimationDuration,
-    Curve? alignDirectionAnimationCurve,
+    this.focalPoint = const FocalPoint(),
+    this.alignPositionStream,
+    this.alignPositionOnUpdate = AlignOnUpdate.never,
+    this.alignDirectionStream,
+    this.alignDirectionOnUpdate = AlignOnUpdate.never,
+    this.alignPositionAnimationDuration = const Duration(milliseconds: 200),
+    this.alignPositionAnimationCurve = Curves.fastOutSlowIn,
+    this.alignDirectionAnimationDuration = const Duration(milliseconds: 120),
+    this.alignDirectionAnimationCurve = Curves.easeOut,
     this.moveAnimationDuration = const Duration(milliseconds: 200),
     this.moveAnimationCurve = Curves.fastOutSlowIn,
-    this.rotateAnimationDuration = const Duration(milliseconds: 50),
-    this.rotateAnimationCurve = Curves.easeInOut,
+    this.rotateAnimationDuration = const Duration(milliseconds: 120),
+    this.rotateAnimationCurve = Curves.easeOut,
     this.indicators = const LocationMarkerIndicators(),
-    @Deprecated("Use 'focalPoint' instead.") Point<double>? followScreenPoint,
-    @Deprecated("Use 'focalPoint' instead.") Point<double>? followScreenPointOffset,
-    @Deprecated("Use 'alignPositionStream' instead.") Stream<double?>? followCurrentLocationStream,
-    @Deprecated("Use 'alignDirectionStream' instead.") Stream<void>? turnHeadingUpLocationStream,
-    @Deprecated("Use 'alignPositionOnUpdate' instead.") AlignOnUpdate followOnLocationUpdate = AlignOnUpdate.never,
-    @Deprecated("Use 'alignDirectionOnUpdate' instead.") AlignOnUpdate turnOnHeadingUpdate = AlignOnUpdate.never,
-    @Deprecated("Use 'alignPositionAnimationDuration' instead.")
-    Duration followAnimationDuration = const Duration(milliseconds: 200),
-    @Deprecated("Use 'alignPositionAnimationCurve' instead.") Curve followAnimationCurve = Curves.fastOutSlowIn,
-    @Deprecated("Use 'alignDirectionAnimationDuration' instead.")
-    Duration turnAnimationDuration = const Duration(milliseconds: 50),
-    @Deprecated("Use 'alignDirectionAnimationCurve' instead.") Curve turnAnimationCurve = Curves.easeInOut,
-  })  : focalPoint = focalPoint ??
-            FocalPoint(
-              ratio: followScreenPoint ?? const Point<double>(0, 0),
-              offset: followScreenPointOffset ?? const Point<double>(0, 0),
-            ),
-        alignPositionStream = alignPositionStream ?? followCurrentLocationStream,
-        alignPositionOnUpdate = alignPositionOnUpdate ?? followOnLocationUpdate,
-        alignPositionAnimationDuration = alignPositionAnimationDuration ?? followAnimationDuration,
-        alignPositionAnimationCurve = alignPositionAnimationCurve ?? followAnimationCurve,
-        alignDirectionStream = alignDirectionStream ?? turnHeadingUpLocationStream,
-        alignDirectionOnUpdate = alignDirectionOnUpdate ?? turnOnHeadingUpdate,
-        alignDirectionAnimationDuration = alignDirectionAnimationDuration ?? turnAnimationDuration,
-        alignDirectionAnimationCurve = alignDirectionAnimationCurve ?? turnAnimationCurve;
-
+  });
   @override
   State<CurrentLocationLayer> createState() => _CurrentLocationLayerState();
 
@@ -191,7 +165,7 @@ class CurrentLocationLayer extends StatefulWidget {
 }
 
 class _CurrentLocationLayerState extends State<CurrentLocationLayer> with TickerProviderStateMixin {
-  _Status _status = _Status.initialing;
+  final _Status _status = _Status.initialing;
   LocationMarkerPosition? _currentPosition;
   LocationMarkerHeading? _currentHeading;
   double? _followingZoom;
@@ -384,51 +358,24 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer> with Ticker
     });
   }
 
-  TickerFuture _moveMarker(LocationMarkerPosition position) {
-    _moveMarkerAnimationController?.dispose();
-    _moveMarkerAnimationController = AnimationController(
-      duration: widget.moveAnimationDuration,
-      vsync: this,
-    );
-    final animation = CurvedAnimation(
-      parent: _moveMarkerAnimationController!,
-      curve: widget.moveAnimationCurve,
-    );
-    final positionTween = LocationMarkerPositionTween(
-      begin: _currentPosition ?? position,
-      end: position,
-    );
-
-    _moveMarkerAnimationController!.addListener(() {
-      setState(() => _currentPosition = positionTween.evaluate(animation));
-    });
-
-    _moveMarkerAnimationController!.addStatusListener((status) {
-      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
-        _moveMarkerAnimationController!.dispose();
-        _moveMarkerAnimationController = null;
-      }
-    });
-
-    return _moveMarkerAnimationController!.forward();
-  }
-
   TickerFuture _moveMap(LatLng latLng, [double? zoom]) {
     final camera = MapCamera.of(context);
     final options = MapOptions.of(context);
     zoom ??= camera.zoom;
 
-    final halfMapSize = camera.nonRotatedSize * 0.5;
-    final projectedFocalPoint = widget.focalPoint.project(halfMapSize);
+    final projectedFocalPoint = widget.focalPoint.project(camera.nonRotatedSize);
 
     final LatLng beginLatLng;
-    if (projectedFocalPoint == halfMapSize) {
+    if (projectedFocalPoint == Offset.zero) {
       beginLatLng = camera.center;
     } else {
       final crs = options.crs;
-      final mapCenter = crs.latLngToPoint(camera.center, camera.zoom);
-      final followPoint = camera.rotatePoint(mapCenter, mapCenter + projectedFocalPoint);
-      beginLatLng = crs.pointToLatLng(followPoint, camera.zoom);
+      final mapCenter = crs.latLngToOffset(camera.center, camera.zoom);
+      final followPoint = camera.rotatePoint(
+        mapCenter,
+        mapCenter + projectedFocalPoint,
+      );
+      beginLatLng = crs.offsetToLatLng(followPoint, camera.zoom);
     }
 
     _moveMapAnimationController?.dispose();
@@ -472,7 +419,7 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer> with Ticker
         MapController.of(context).move(
           evaluatedLatLng,
           evaluatedZoom,
-          offset: projectedFocalPoint.toOffset(),
+          offset: projectedFocalPoint,
         );
       }
     });
@@ -485,37 +432,6 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer> with Ticker
     });
 
     return _moveMapAnimationController!.forward();
-  }
-
-  TickerFuture _rotateMarker(LocationMarkerHeading heading) {
-    _rotateMarkerAnimationController?.dispose();
-    _rotateMarkerAnimationController = AnimationController(
-      duration: widget.rotateAnimationDuration,
-      vsync: this,
-    );
-    final animation = CurvedAnimation(
-      parent: _rotateMarkerAnimationController!,
-      curve: widget.rotateAnimationCurve,
-    );
-    final headingTween = LocationMarkerHeadingTween(
-      begin: _currentHeading ?? heading,
-      end: heading,
-    );
-
-    _rotateMarkerAnimationController!.addListener(() {
-      if (_status == _Status.ready) {
-        setState(() => _currentHeading = headingTween.evaluate(animation));
-      }
-    });
-
-    _rotateMarkerAnimationController!.addStatusListener((status) {
-      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
-        _rotateMarkerAnimationController!.dispose();
-        _rotateMarkerAnimationController = null;
-      }
-    });
-
-    return _rotateMarkerAnimationController!.forward();
   }
 
   TickerFuture _rotateMap(double angle) {
@@ -550,7 +466,7 @@ class _CurrentLocationLayerState extends State<CurrentLocationLayer> with Ticker
       } else {
         MapController.of(context).rotateAroundPoint(
           evaluatedAngle,
-          offset: projectedFocalPoint.toOffset(),
+          offset: projectedFocalPoint,
         );
       }
     });
